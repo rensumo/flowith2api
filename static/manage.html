@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理控制台 - Flowith Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slide-up{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+        .animate-slide-up{animation:slide-up .3s ease-out}
+        .tab-btn{transition:all .2s ease}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .animate-spin{animation:spin 1s linear infinite}
+    </style>
+    <script>
+        tailwind.config={theme:{extend:{colors:{border:"hsl(0 0% 89%)",input:"hsl(0 0% 89%)",ring:"hsl(0 0% 3.9%)",background:"hsl(0 0% 100%)",foreground:"hsl(0 0% 3.9%)",primary:{DEFAULT:"hsl(0 0% 9%)",foreground:"hsl(0 0% 98%)"},secondary:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 9%)"},muted:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 45.1%)"},destructive:{DEFAULT:"hsl(0 84.2% 60.2%)",foreground:"hsl(0 0% 98%)"},success:{DEFAULT:"hsl(142 71% 45%)",foreground:"hsl(0 0% 98%)"}}}}}
+    </script>
+</head>
+<body class="h-full bg-background text-foreground antialiased">
+    <!-- 导航栏 -->
+    <header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur">
+        <div class="mx-auto flex h-14 max-w-7xl items-center px-6">
+            <div class="mr-4 flex items-baseline gap-3">
+                <span class="font-bold text-xl">Flowith Admin</span>
+                <span class="text-xs text-muted-foreground">v1.0.0</span>
+            </div>
+            <div class="flex flex-1 items-center justify-end gap-3">
+                <button onclick="switchTab('settings')" class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5 gap-1">
+                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    设置
+                </button>
+                <button onclick="logout()" class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5 gap-1">
+                    <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    退出
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl px-6 py-6">
+        <!-- Tab 导航 -->
+        <div class="border-b border-border mb-6">
+            <nav class="flex space-x-8">
+                <button onclick="switchTab('tokens')" id="tabTokens" class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1">Token 管理</button>
+                <button onclick="switchTab('credits')" id="tabCredits" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">积分概览</button>
+                <button onclick="switchTab('models')" id="tabModels" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">可用模型</button>
+                <button onclick="switchTab('settings')" id="tabSettings" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1">系统配置</button>
+            </nav>
+        </div>
+
+        <!-- ===================== Token 管理面板 ===================== -->
+        <div id="panelTokens">
+            <div class="rounded-lg border border-border bg-background">
+                <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
+                    <h3 class="text-lg font-semibold">Token 列表</h3>
+                    <div class="flex items-center gap-3">
+                        <button onclick="refreshTokens()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="刷新">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
+                        <button onclick="openAddModal()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3">
+                            <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            <span class="text-sm font-medium">新增</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative w-full overflow-x-auto">
+                    <table class="w-full table-auto text-sm">
+                        <thead>
+                            <tr class="border-b border-border">
+                                <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground">邮箱</th>
+                                <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground">状态</th>
+                                <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground">备注</th>
+                                <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground">创建时间</th>
+                                <th class="h-10 w-[100px] px-2.5 text-right align-middle font-medium text-muted-foreground">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tokenTableBody" class="divide-y divide-border">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== 积分概览面板 ===================== -->
+        <div id="panelCredits" class="hidden">
+            <!-- 统计卡片 -->
+            <div class="grid gap-4 grid-cols-1 md:grid-cols-3 mb-6">
+                <div class="rounded-lg border border-border bg-background p-4">
+                    <p class="text-sm font-medium text-muted-foreground mb-2">总剩余积分</p>
+                    <h3 class="text-2xl font-bold" id="statTotalRemain">-</h3>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-4">
+                    <p class="text-sm font-medium text-muted-foreground mb-2">总初始积分</p>
+                    <h3 class="text-2xl font-bold text-blue-600" id="statTotalInit">-</h3>
+                </div>
+                <div class="rounded-lg border border-border bg-background p-4">
+                    <p class="text-sm font-medium text-muted-foreground mb-2">Token 数量</p>
+                    <h3 class="text-2xl font-bold text-green-600" id="statTokenCount">-</h3>
+                </div>
+            </div>
+
+            <!-- 积分详情表格 -->
+            <div class="rounded-lg border border-border bg-background">
+                <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
+                    <h3 class="text-lg font-semibold">积分详情</h3>
+                    <button onclick="refreshCredits()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="刷新">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="relative w-full overflow-x-auto">
+                    <table class="w-full table-auto text-sm">
+                        <thead>
+                            <tr class="border-b border-border">
+                                <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground">邮箱</th>
+                                <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground">类型</th>
+                                <th class="h-10 px-2.5 text-right align-middle font-medium text-muted-foreground">剩余积分</th>
+                                <th class="h-10 px-2.5 text-right align-middle font-medium text-muted-foreground">初始积分</th>
+                                <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground">剩余天数</th>
+                                <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground">有效期至</th>
+                            </tr>
+                        </thead>
+                        <tbody id="creditsTableBody" class="divide-y divide-border">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== 可用模型面板 ===================== -->
+        <div id="panelModels" class="hidden">
+            <div class="rounded-lg border border-border bg-background">
+                <div class="flex items-center justify-between gap-4 p-4 border-b border-border">
+                    <h3 class="text-lg font-semibold">可用模型列表</h3>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground">按用户层级自动过滤</span>
+                        <button onclick="refreshModels()" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-8 w-8" title="刷新">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="modelsContent" class="p-4 text-sm text-muted-foreground">
+                    加载中...
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== 系统配置面板 ===================== -->
+        <div id="panelSettings" class="hidden">
+            <div class="grid gap-6 lg:grid-cols-2">
+                <!-- 安全配置 -->
+                <div class="rounded-lg border border-border bg-background p-6 flex flex-col">
+                    <h3 class="text-lg font-semibold mb-4">安全配置</h3>
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="text-sm font-medium mb-2 block">管理员用户名</label>
+                            <input id="cfgAdminUsername" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium mb-2 block">旧密码</label>
+                            <input id="cfgOldPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="输入旧密码">
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium mb-2 block">新密码</label>
+                            <input id="cfgNewPassword" type="password" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="输入新密码">
+                        </div>
+                    </div>
+                    <button onclick="updatePassword()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full mt-4">修改密码</button>
+                </div>
+
+                <!-- API 配置 -->
+                <div class="rounded-lg border border-border bg-background p-6 flex flex-col">
+                    <h3 class="text-lg font-semibold mb-4">API 配置</h3>
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="text-sm font-medium mb-2 block">API Key（用于客户端调用）</label>
+                            <input id="cfgApiKey" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                            <p class="text-xs text-muted-foreground mt-1">客户端通过 Authorization: Bearer {api_key} 调用</p>
+                        </div>
+                    </div>
+                    <button onclick="saveApiConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full mt-4">保存</button>
+                </div>
+
+                <!-- 代理配置 -->
+                <div class="rounded-lg border border-border bg-background p-6 flex flex-col">
+                    <h3 class="text-lg font-semibold mb-4">代理配置</h3>
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="cfgProxyEnabled" class="h-4 w-4 rounded border-input">
+                                <span class="text-sm font-medium">启用请求代理</span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium mb-2 block">代理地址</label>
+                            <input id="cfgProxyUrl" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
+                            <p class="text-xs text-muted-foreground mt-1">支持 HTTP 和 SOCKS5 代理</p>
+                        </div>
+                    </div>
+                    <button onclick="saveProxyConfig()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 w-full mt-4">保存</button>
+                </div>
+
+                <!-- 调试配置 -->
+                <div class="rounded-lg border border-border bg-background p-6 flex flex-col">
+                    <h3 class="text-lg font-semibold mb-4">调试配置</h3>
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="cfgDebugEnabled" class="h-4 w-4 rounded border-input">
+                                <span class="text-sm font-medium">启用调试模式</span>
+                            </label>
+                            <p class="text-xs text-muted-foreground mt-2">开启后输出详细日志</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-muted-foreground text-center mt-auto">✅ 开关状态自动保存</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 新增 Token 弹窗 -->
+    <div id="addTokenModal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center">
+        <div class="bg-background rounded-lg border border-border p-6 w-full max-w-lg mx-4 animate-slide-up">
+            <h3 class="text-lg font-semibold mb-4">新增 Token</h3>
+
+            <!-- 模式切换 -->
+            <div class="flex rounded-md border border-input overflow-hidden mb-4">
+                <button id="modeAt" onclick="switchInputMode('at')" class="flex-1 py-2 text-sm font-medium bg-primary text-primary-foreground">手动输入 AT</button>
+                <button id="modeRt" onclick="switchInputMode('rt')" class="flex-1 py-2 text-sm font-medium bg-background text-muted-foreground hover:bg-accent">输入 RT 自动获取</button>
+            </div>
+
+            <!-- AT 模式 -->
+            <div id="atInputMode" class="space-y-4">
+                <div>
+                    <label class="text-sm font-medium mb-2 block">Authorization 值 (AT)</label>
+                    <textarea id="newTokenAuth" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" placeholder="eyJhbGciOiJFUzI1NiIs..."></textarea>
+                    <p class="text-xs text-muted-foreground mt-1">从 flowith.io 请求头获取的完整 Authorization 值</p>
+                </div>
+                <div class="flex items-end gap-2">
+                    <div class="flex-1">
+                        <label class="text-sm font-medium mb-2 block">邮箱</label>
+                        <input id="newTokenEmail" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="例如: user@example.com">
+                    </div>
+                    <button onclick="autoFetchEmail()" type="button" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-3 text-xs whitespace-nowrap">
+                        <svg class="h-3.5 w-3.5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                        自动获取
+                    </button>
+                </div>
+                <div>
+                    <label class="text-sm font-medium mb-2 block">备注（可选）</label>
+                    <input id="newTokenNote" type="text" class="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="备注信息">
+                </div>
+            </div>
+
+            <!-- RT 模式 -->
+            <div id="rtInputMode" class="hidden space-y-4">
+                <div>
+                    <label class="text-sm font-medium mb-2 block">Refresh Token (RT)</label>
+                    <textarea id="newTokenRt" rows="3" class="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono" placeholder="eyJ..."></textarea>
+                    <p class="text-xs text-muted-foreground mt-1">输入 RT 自动刷新出 AT，并自动获取邮箱和积分</p>
+                </div>
+                <div>
+                    <button onclick="refreshFromRt()" type="button" class="inline-flex items-center justify-center rounded-md bg-green-600 text-white hover:bg-green-700 h-9 px-4 text-sm w-full">
+                        <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                        刷新并获取信息
+                    </button>
+                </div>
+                <div id="rtResult" class="hidden rounded-md border border-border p-3 space-y-1 text-sm">
+                    <p><span class="text-muted-foreground">邮箱:</span> <span id="rtEmail" class="font-medium"></span></p>
+                    <p><span class="text-muted-foreground">AT:</span> <code id="rtAt" class="text-xs truncate block bg-muted p-1 rounded"></code></p>
+                    <p><span class="text-muted-foreground">有效期:</span> <span id="rtExpires" class="font-medium"></span></p>
+                    <p><span class="text-muted-foreground">剩余积分:</span> <span id="rtQuota" class="font-medium"></span></p>
+                    <p><span class="text-muted-foreground">可用模型层级:</span> <span id="rtTiers" class="font-medium"></span></p>
+                    <input type="hidden" id="newTokenRtResult">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeAddModal()" class="inline-flex items-center justify-center rounded-md border border-input bg-background hover:bg-accent h-9 px-4 text-sm">取消</button>
+                <button onclick="submitAddToken()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm">确认新增</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── 全局 ──────────────────────────────────────────────
+        const TOKEN = localStorage.getItem('adminToken');
+        if (!TOKEN) location.href = '/';
+        const headers = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+
+        function showToast(m, t = 'error') {
+            const d = document.createElement('div'), bc = { success: 'bg-green-600', error: 'bg-destructive', info: 'bg-primary' };
+            d.className = `fixed bottom-4 right-4 ${bc[t] || bc.error} text-white px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium z-50 animate-slide-up`;
+            d.textContent = m; document.body.appendChild(d);
+            setTimeout(() => { d.style.opacity = '0'; d.style.transition = 'opacity .3s'; setTimeout(() => d.parentNode && document.body.removeChild(d), 300) }, 2000);
+        }
+
+        function logout() { localStorage.removeItem('adminToken'); location.href = '/'; }
+
+        // ─── Tab 切换 ──────────────────────────────────────────
+        function switchTab(tab) {
+            document.querySelectorAll('[id^="panel"]').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('[id^="tab"]').forEach(t => t.classList.remove('border-primary'));
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('border-primary');
+            document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden');
+            if (tab === 'credits') refreshCredits();
+            if (tab === 'models') refreshModels();
+            if (tab === 'settings') loadConfig();
+        }
+
+        // ─── Token 管理 ────────────────────────────────────────
+        async function refreshTokens() {
+            try {
+                const r = await fetch('/api/tokens', { headers });
+                const d = await r.json();
+                renderTokens(d.data || []);
+            } catch (e) { showToast('获取 Token 列表失败'); }
+        }
+
+        function renderTokens(tokens) {
+            const tbody = document.getElementById('tokenTableBody');
+            if (!tokens.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="h-24 text-center text-muted-foreground text-sm">暂无 Token，点击右上角新增</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = tokens.map(t => `
+                <tr class="hover:bg-muted/50">
+                    <td class="px-2.5 py-3 text-left font-medium">${escHtml(t.email || 'unknown')}</td>
+                    <td class="px-2.5 py-3 text-center">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${t.enabled !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                            ${t.enabled !== false ? '启用' : '禁用'}
+                        </span>
+                    </td>
+                    <td class="px-2.5 py-3 text-left text-muted-foreground">${escHtml(t.note || '-')}</td>
+                    <td class="px-2.5 py-3 text-left text-muted-foreground text-xs">${t.created_at ? new Date(t.created_at).toLocaleString() : '-'}</td>
+                    <td class="px-2.5 py-3 text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <button onclick="toggleToken('${t.id}')" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-accent h-7 w-7" title="${t.enabled !== false ? '禁用' : '启用'}">
+                                ${t.enabled !== false
+                                    ? `<svg class="h-3.5 w-3.5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`
+                                    : `<svg class="h-3.5 w-3.5 text-red-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`
+                                }
+                            </button>
+                            <button onclick="deleteToken('${t.id}')" class="inline-flex items-center justify-center rounded-md transition-colors hover:bg-red-50 hover:text-red-700 h-7 w-7" title="删除">
+                                <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        async function toggleToken(id) {
+            try {
+                const r = await fetch(`/api/tokens/${id}/toggle`, { method: 'PUT', headers, body: JSON.stringify({ enabled: true }) });
+                const d = await r.json();
+                if (d.success) refreshTokens();
+            } catch (e) { showToast('操作失败'); }
+        }
+
+        async function deleteToken(id) {
+            if (!confirm('确定删除此 Token？')) return;
+            try {
+                const r = await fetch(`/api/tokens/${id}`, { method: 'DELETE', headers });
+                const d = await r.json();
+                if (d.success) { showToast('已删除', 'success'); refreshTokens(); }
+            } catch (e) { showToast('删除失败'); }
+        }
+
+        // ─── 新增 Token（AT/RT 双模式） ─────────────────────────
+        let currentInputMode = 'at';
+
+        function switchInputMode(mode) {
+            currentInputMode = mode;
+            const atBtn = document.getElementById('modeAt');
+            const rtBtn = document.getElementById('modeRt');
+            if (mode === 'at') {
+                atBtn.className = 'flex-1 py-2 text-sm font-medium bg-primary text-primary-foreground';
+                rtBtn.className = 'flex-1 py-2 text-sm font-medium bg-background text-muted-foreground hover:bg-accent';
+            } else {
+                atBtn.className = 'flex-1 py-2 text-sm font-medium bg-background text-muted-foreground hover:bg-accent';
+                rtBtn.className = 'flex-1 py-2 text-sm font-medium bg-primary text-primary-foreground';
+            }
+            document.getElementById('atInputMode').classList.toggle('hidden', mode !== 'at');
+            document.getElementById('rtInputMode').classList.toggle('hidden', mode !== 'rt');
+        }
+
+        function openAddModal() {
+            document.getElementById('addTokenModal').classList.remove('hidden');
+            document.getElementById('rtResult').classList.add('hidden');
+            switchInputMode('at');
+        }
+
+        function closeAddModal() { document.getElementById('addTokenModal').classList.add('hidden'); }
+
+        async function refreshFromRt() {
+            const rt = document.getElementById('newTokenRt').value.trim();
+            if (!rt) { showToast('请输入 Refresh Token'); return; }
+            const btn = document.querySelector('#rtInputMode button');
+            const orig = btn.innerHTML; btn.innerHTML = '处理中...'; btn.disabled = true;
+            try {
+                const r = await fetch('/api/token/from-rt', { method: 'POST', headers, body: JSON.stringify({refresh_token: rt}) });
+                const d = await r.json();
+                if (!d.success) { showToast(d.message || '刷新失败', 'error'); btn.innerHTML = orig; btn.disabled = false; return; }
+                document.getElementById('rtEmail').textContent = d.email || '未知';
+                document.getElementById('rtAt').textContent = d.authorization || '';
+                document.getElementById('rtExpires').textContent = d.expires_in ? Math.round(d.expires_in/60) + ' 分钟' : '未知';
+                document.getElementById('rtQuota').textContent = d.credits?.remain_quota != null ? d.credits.remain_quota.toFixed(2) : 'N/A';
+                document.getElementById('rtTiers').textContent = d.credits?.allowed_tiers?.join(', ') || '无限制';
+                document.getElementById('newTokenRtResult').value = JSON.stringify({authorization: d.authorization || '',refresh_token: d.refresh_token || rt,email: d.email || ''});
+                document.getElementById('rtResult').classList.remove('hidden');
+                showToast('获取成功: ' + d.email, 'success');
+            } catch (e) { showToast('请求失败: ' + e.message, 'error'); }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
+        }
+
+        async function submitAddToken() {
+            let email, authorization, refreshToken, note;
+            if (currentInputMode === 'rt') {
+                const stored = document.getElementById('newTokenRtResult').value;
+                if (!stored) { showToast('请先点击「刷新并获取信息」', 'error'); return; }
+                try {
+                    const data = JSON.parse(stored);
+                    authorization = data.authorization; refreshToken = data.refresh_token; email = data.email;
+                } catch(e) { showToast('请先刷新获取信息', 'error'); return; }
+                note = '';
+            } else {
+                authorization = document.getElementById('newTokenAuth').value.trim();
+                email = document.getElementById('newTokenEmail').value.trim();
+                refreshToken = '';
+                note = document.getElementById('newTokenNote').value.trim();
+                if (!email || !authorization) { showToast('邮箱和 Authorization 不能为空'); return; }
+            }
+            try {
+                const r = await fetch('/api/tokens', { method: 'POST', headers, body: JSON.stringify({email, authorization, refresh_token: refreshToken, note}) });
+                const d = await r.json();
+                if (d.success) { showToast('新增成功', 'success'); closeAddModal(); refreshTokens(); }
+            } catch(e) { showToast('新增失败'); }
+        }
+
+        async function autoFetchEmail() {
+            const auth = document.getElementById('newTokenAuth').value.trim();
+            if (!auth) { showToast('请先填写 Authorization 值'); return; }
+            const btn = event.target;
+            const orig = btn.innerHTML; btn.innerHTML = '获取中...'; btn.disabled = true;
+            try {
+                const r = await fetch('/api/user/auto-email', { method: 'POST', headers, body: JSON.stringify({authorization: auth}) });
+                const d = await r.json();
+                if (d.success && d.email) { document.getElementById('newTokenEmail').value = d.email; showToast('自动获取邮箱: ' + d.email, 'success'); }
+                else { showToast(d.message || '获取邮箱失败', 'error'); }
+            } catch(e) { showToast('请求失败: ' + e.message, 'error'); }
+            finally { btn.innerHTML = orig; btn.disabled = false; }
+        }
+
+        // ─── 积分查询 ──────────────────────────────────────────
+        async function refreshCredits() {
+            const tbody = document.getElementById('creditsTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="h-24 text-center text-muted-foreground text-sm">
+                <svg class="inline h-5 w-5 animate-spin mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                查询中...
+            </td></tr>`;
+            try {
+                const r = await fetch('/api/credits/simple', { headers });
+                const d = await r.json();
+                if (!d.success) { showToast('查询失败'); return; }
+                document.getElementById('statTotalRemain').textContent = d.total_remain.toLocaleString();
+                document.getElementById('statTotalInit').textContent = d.total_init.toLocaleString();
+                document.getElementById('statTokenCount').textContent = d.token_count;
+                if (!d.details || !d.details.length) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="h-24 text-center text-muted-foreground text-sm">暂无积分数据</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = d.details.map(item => `
+                    <tr class="hover:bg-muted/50">
+                        <td class="px-2.5 py-3 text-left font-medium">${escHtml(item.email)}</td>
+                        <td class="px-2.5 py-3 text-center">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">${escHtml(item.sub_type || '-')}</span>
+                        </td>
+                        <td class="px-2.5 py-3 text-right font-semibold ${item.remain_quota > 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${item.remain_quota != null ? item.remain_quota.toFixed(2) : 'N/A'}
+                        </td>
+                        <td class="px-2.5 py-3 text-right text-muted-foreground">${item.init_quota || 0}</td>
+                        <td class="px-2.5 py-3 text-center text-muted-foreground">${item.remain_days ?? '-'}</td>
+                        <td class="px-2.5 py-3 text-center text-xs text-muted-foreground">${item.to_date ? new Date(item.to_date).toLocaleDateString() : '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) { showToast('查询积分失败: ' + e.message); }
+        }
+
+        // ─── 系统配置 ──────────────────────────────────────────
+        async function loadConfig() {
+            try {
+                const r = await fetch('/api/admin/config', { headers });
+                const d = await r.json();
+                if (!d.success) return;
+                const c = d.data;
+                document.getElementById('cfgAdminUsername').value = c.admin_username || '';
+                document.getElementById('cfgApiKey').value = c.api_key || '';
+                document.getElementById('cfgProxyEnabled').checked = c.proxy_enabled || false;
+                document.getElementById('cfgProxyUrl').value = c.proxy_url || '';
+                document.getElementById('cfgDebugEnabled').checked = c.debug || false;
+            } catch (e) { showToast('加载配置失败'); }
+        }
+
+        async function updatePassword() {
+            const oldPwd = document.getElementById('cfgOldPassword').value;
+            const newPwd = document.getElementById('cfgNewPassword').value;
+            if (!oldPwd || !newPwd) { showToast('请填写旧密码和新密码'); return; }
+            try {
+                const r = await fetch('/api/admin/password', { method: 'POST', headers, body: JSON.stringify({ old_password: oldPwd, new_password: newPwd }) });
+                const d = await r.json();
+                if (d.success) showToast('密码修改成功', 'success');
+                else showToast(d.detail || '修改失败');
+            } catch (e) { showToast('修改失败'); }
+        }
+
+        async function saveApiConfig() {
+            const apiKey = document.getElementById('cfgApiKey').value;
+            try {
+                const r = await fetch('/api/admin/config', { method: 'POST', headers, body: JSON.stringify({ api_key: apiKey }) });
+                const d = await r.json();
+                if (d.success) showToast('API Key 已更新', 'success');
+            } catch (e) { showToast('保存失败'); }
+        }
+
+        async function saveProxyConfig() {
+            const enabled = document.getElementById('cfgProxyEnabled').checked;
+            const url = document.getElementById('cfgProxyUrl').value;
+            try {
+                const r = await fetch('/api/admin/config', { method: 'POST', headers, body: JSON.stringify({ proxy_enabled: enabled, proxy_url: url }) });
+                const d = await r.json();
+                if (d.success) showToast('代理配置已保存', 'success');
+            } catch (e) { showToast('保存失败'); }
+        }
+
+        // ─── 可用模型 ──────────────────────────────────────────
+        async function refreshModels() {
+            const content = document.getElementById('modelsContent');
+            content.innerHTML = `<div class="flex items-center gap-2">
+                <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                查询可用模型...
+            </div>`;
+            try {
+                const r = await fetch('/api/models', { headers });
+                const d = await r.json();
+                if (!d.success || !d.data) { content.innerHTML = '查询失败'; return; }
+
+                let html = '';
+                for (const tokenData of d.data) {
+                    if (tokenData.error) {
+                        html += `<div class="mb-6 p-4 rounded-lg border border-red-200 bg-red-50">
+                            <p class="font-medium text-red-700">${escHtml(tokenData.email)}</p>
+                            <p class="text-xs text-red-500 mt-1">错误: ${escHtml(tokenData.error)}</p>
+                        </div>`;
+                        continue;
+                    }
+                    html += `<div class="mb-6 p-4 rounded-lg border border-border">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <span class="font-medium">${escHtml(tokenData.email)}</span>
+                                <span class="text-xs text-muted-foreground ml-2">(${tokenData.model_count} 个模型)</span>
+                            </div>
+                            ${tokenData.allowed_tiers && tokenData.allowed_tiers.length
+                                ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">层级: ${tokenData.allowed_tiers.join(', ')}</span>`
+                                : `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">无限制</span>`
+                            }
+                        </div>
+                        <div class="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">`;
+                    for (const m of tokenData.models) {
+                        html += `<div class="flex items-center gap-2 p-2 rounded-md border border-border/60 hover:bg-muted/50">
+                            ${m.logo ? `<img src="${escHtml(m.logo)}" class="w-6 h-6 rounded flex-shrink-0" alt="" onerror="this.style.display='none'">` : ''}
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium truncate" title="${escHtml(m.id || m.name || '')}">${escHtml(m.name || m.id || '未知')}</p>
+                                <p class="text-xs text-muted-foreground truncate" title="${escHtml(m.description || '')}">${escHtml(m.description || m.id || '')}</p>
+                            </div>
+                            ${m.tier ? `<span class="text-xs text-muted-foreground flex-shrink-0">${escHtml(m.tier)}</span>` : ''}
+                        </div>`;
+                    }
+                    html += `</div></div>`;
+                }
+                content.innerHTML = html || '<p class="text-muted-foreground">无数据</p>';
+            } catch (e) {
+                content.innerHTML = `<p class="text-red-500">查询失败: ${e.message}</p>`;
+            }
+        }
+
+        // ─── 初始化 ────────────────────────────────────────────
+        refreshTokens();
+    </script>
+</body>
+</html>

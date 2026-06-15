@@ -1,0 +1,8 @@
+data/
+__pycache__/
+*.pyc
+*.pyo
+.env
+models_raw.json
+test_*.py
+rt_bruteforce.py
