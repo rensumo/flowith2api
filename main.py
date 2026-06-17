@@ -431,6 +431,175 @@ async def import_tokens(req: ImportTokensRequest, authorized: bool = Depends(adm
     return {"success": True, "count": len(req.tokens)}
 
 
+# ─── Size/ratio mapping helpers ───────────────────────────────
+SIZE_TO_RATIO = {
+    "256x256": "1:1", "512x512": "1:1", "1024x1024": "1:1",
+    "1792x1024": "16:9", "1024x1792": "9:16",
+    "1536x1024": "3:2", "1024x1536": "2:3",
+    "1344x768": "16:9", "768x1344": "9:16",
+}
+
+SIZE_TO_IMG_SIZE = {
+    "256x256": "512", "512x512": "512",
+    "1024x1024": "1k", "1792x1024": "1k", "1024x1792": "1k",
+    "1536x1024": "2k", "1024x1536": "2k",
+    "2048x2048": "2k",
+}
+
+QUALITY_MAP = {"standard": None, "hd": "high", "high": "high"}
+
+
+# ─── OpenAI-compatible Images API ────────────────────────────
+class ImageRequest(BaseModel):
+    model: str = "gemini-3.1-flash-image"
+    prompt: str
+    n: int = 1
+    size: str | None = None
+    quality: str | None = None
+    style: str | None = None
+
+
+@app.post("/v1/images/generations")
+async def images_generations(req: ImageRequest, authorized: bool = Depends(api_key_dependency)):
+    tokens = config.get("tokens", [])
+    active = [t for t in tokens if t.get("enabled", True)]
+    if not active:
+        raise HTTPException(status_code=503, detail="没有可用的 Token")
+
+    tk = active[0]
+    client = FlowithClient(
+        authorization=tk.get("authorization", ""),
+        refresh_token=tk.get("refresh_token", ""),
+        proxy=config.get("proxy_url"),
+    )
+
+    ar = SIZE_TO_RATIO.get(req.size) if req.size else None
+    img_size = SIZE_TO_IMG_SIZE.get(req.size) if req.size else None
+    quality = QUALITY_MAP.get(req.quality) if req.quality else None
+
+    messages = [{"role": "user", "content": req.prompt}]
+
+    image_url = None
+    try:
+        async for event in client.generate_image(messages, req.model, aspect_ratio=ar, image_size=img_size, quality=quality, style=req.style):
+            if isinstance(event, dict):
+                if event.get("type") == "generated_file":
+                    gf = event.get("generatedFile", {})
+                    if gf.get("status") == "ready" and gf.get("url"):
+                        image_url = gf["url"]
+    finally:
+        await client.close()
+
+    if not image_url:
+        raise HTTPException(status_code=502, detail="图片生成失败")
+
+    return {
+        "created": int(datetime.now().timestamp()),
+        "data": [{"url": image_url}],
+    }
+
+
+class ImageEditRequest(BaseModel):
+    model: str = "gemini-3.1-flash-image"
+    prompt: str
+    image: str  # base64
+    mask: str | None = None
+    size: str | None = None
+
+
+@app.post("/v1/images/edits")
+async def images_edits(req: ImageEditRequest, authorized: bool = Depends(api_key_dependency)):
+    tokens = config.get("tokens", [])
+    active = [t for t in tokens if t.get("enabled", True)]
+    if not active:
+        raise HTTPException(status_code=503, detail="没有可用的 Token")
+
+    tk = active[0]
+    client = FlowithClient(
+        authorization=tk.get("authorization", ""),
+        refresh_token=tk.get("refresh_token", ""),
+        proxy=config.get("proxy_url"),
+    )
+
+    ar = SIZE_TO_RATIO.get(req.size) if req.size else None
+    img_size = SIZE_TO_IMG_SIZE.get(req.size) if req.size else None
+
+    data_url = f"data:image/png;base64,{req.image}"
+    content_parts = [{"type": "text", "text": req.prompt}]
+    content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+    messages = [{"role": "user", "content": content_parts}]
+
+    image_url = None
+    try:
+        async for event in client.generate_image(messages, req.model, aspect_ratio=ar, image_size=img_size):
+            if isinstance(event, dict):
+                if event.get("type") == "generated_file":
+                    gf = event.get("generatedFile", {})
+                    if gf.get("status") == "ready" and gf.get("url"):
+                        image_url = gf["url"]
+    finally:
+        await client.close()
+
+    if not image_url:
+        raise HTTPException(status_code=502, detail="图片编辑失败")
+
+    return {
+        "created": int(datetime.now().timestamp()),
+        "data": [{"url": image_url}],
+    }
+
+
+# ─── OpenAI-compatible Videos API ────────────────────────────
+class VideoRequest(BaseModel):
+    model: str = "veo-3.1-fast-generate"
+    prompt: str
+    size: str | None = None
+    duration: str | None = None
+    image: str | None = None  # base64 for image-to-video
+
+
+@app.post("/v1/videos/generations")
+async def videos_generations(req: VideoRequest, authorized: bool = Depends(api_key_dependency)):
+    tokens = config.get("tokens", [])
+    active = [t for t in tokens if t.get("enabled", True)]
+    if not active:
+        raise HTTPException(status_code=503, detail="没有可用的 Token")
+
+    tk = active[0]
+    client = FlowithClient(
+        authorization=tk.get("authorization", ""),
+        refresh_token=tk.get("refresh_token", ""),
+        proxy=config.get("proxy_url"),
+    )
+
+    ar = SIZE_TO_RATIO.get(req.size) if req.size else None
+
+    content_parts = [{"type": "text", "text": req.prompt}]
+    if req.image:
+        data_url = f"data:image/png;base64,{req.image}"
+        content_parts.append({"type": "image_url", "image_url": {"url": data_url}})
+    messages = [{"role": "user", "content": content_parts}]
+
+    video_url = None
+    try:
+        async for event in client.generate_video(messages, req.model, aspect_ratio=ar, duration=req.duration):
+            if isinstance(event, dict):
+                if event.get("type") == "generated_file":
+                    gf = event.get("generatedFile", {})
+                    if gf.get("status") == "ready" and gf.get("url"):
+                        video_url = gf["url"]
+    finally:
+        await client.close()
+
+    if not video_url:
+        raise HTTPException(status_code=502, detail="视频生成失败")
+
+    return {
+        "created": int(datetime.now().timestamp()),
+        "data": [{"url": video_url}],
+    }
+
+
 # ─── OpenAI-compatible Chat API ────────────────────────────────
 class ChatMessage(BaseModel):
     role: str
@@ -443,6 +612,7 @@ class ChatRequest(BaseModel):
     stream: bool = True
     tools: list | None = None
     tool_choice: str | None = None
+    websearch: bool | None = None
 
 
 @app.post("/v1/chat/completions")

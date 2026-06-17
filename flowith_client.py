@@ -224,6 +224,7 @@ class FlowithClient:
         model: str = "deepseek-v4-flash",
         node_id: Optional[str] = None,
         conv_id: Optional[str] = None,
+        websearch: bool = False,
     ) -> AsyncGenerator[tuple, None]:
         client = await self._get_client()
         node_id = node_id or str(uuid.uuid4())
@@ -237,6 +238,8 @@ class FlowithClient:
             "convId": conv_id,
             "stream": True,
         }
+        if websearch:
+            payload["websearch"] = True
 
         async with client.stream(
             "POST",
@@ -311,6 +314,120 @@ class FlowithClient:
             remaining = buffer[prev_value_end:]
             if remaining:
                 yield (remaining, "")
+
+    async def upload_file(self, file_data: bytes, filename: str = "image.png") -> str:
+        """Upload a file to /file/store, returns URL."""
+        client = await self._get_client()
+        files = {"file": (filename, file_data, "image/png")}
+        resp = await client.post(f"{BASE_URL}/file/store", files=files)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("url", "")
+
+    async def generate_image(
+        self,
+        messages: list,
+        model: str,
+        node_id: Optional[str] = None,
+        conv_id: Optional[str] = None,
+        aspect_ratio: Optional[str] = None,
+        image_size: Optional[str] = None,
+        quality: Optional[str] = None,
+        websearch: bool = False,
+        style: Optional[str] = None,
+    ) -> AsyncGenerator[str, None]:
+        """Stream image generation via /image_gen, yields SSE events."""
+        client = await self._get_client()
+        node_id = node_id or str(uuid.uuid4())
+        conv_id = conv_id or str(uuid.uuid4())
+
+        payload = {
+            "target_feature": "image_generation",
+            "model": model,
+            "messages": messages,
+            "nodeId": node_id,
+            "convId": conv_id,
+            "stream": True,
+        }
+        if aspect_ratio:
+            payload["aspect_ratio"] = aspect_ratio
+        if image_size:
+            payload["image_size"] = image_size
+        if quality:
+            payload["quality"] = quality
+        if websearch:
+            payload["websearch"] = True
+        if style:
+            payload["style"] = style
+
+        async with client.stream(
+            "POST",
+            f"{BASE_URL}/image_gen",
+            json=payload,
+        ) as resp:
+            resp.raise_for_status()
+            buffer = ""
+            async for chunk in resp.aiter_text():
+                buffer += chunk
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        yield data
+                    except json.JSONDecodeError:
+                        pass
+
+    async def generate_video(
+        self,
+        messages: list,
+        model: str,
+        node_id: Optional[str] = None,
+        conv_id: Optional[str] = None,
+        aspect_ratio: Optional[str] = None,
+        duration: Optional[str] = None,
+        websearch: bool = False,
+    ) -> AsyncGenerator[dict, None]:
+        client = await self._get_client()
+        node_id = node_id or str(uuid.uuid4())
+        conv_id = conv_id or str(uuid.uuid4())
+
+        payload = {
+            "target_feature": "video_generation",
+            "model": model,
+            "messages": messages,
+            "nodeId": node_id,
+            "convId": conv_id,
+            "stream": True,
+        }
+        if aspect_ratio:
+            payload["aspect_ratio"] = aspect_ratio
+        if duration:
+            payload["duration"] = duration
+        if websearch:
+            payload["websearch"] = True
+
+        async with client.stream(
+            "POST",
+            f"{BASE_URL}/image_gen",
+            json=payload,
+        ) as resp:
+            resp.raise_for_status()
+            buffer = ""
+            async for chunk in resp.aiter_text():
+                buffer += chunk
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                        yield data
+                    except json.JSONDecodeError:
+                        pass
 
     async def chat(
         self,
